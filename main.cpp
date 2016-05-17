@@ -4,6 +4,7 @@
 #include <opencv2/calib3d.hpp>
 #include "myCVClasses.hpp"
 #include "Preprocess.h"
+#include "LPD.h"
 
 
 using namespace std;
@@ -89,6 +90,16 @@ inline double dist(Point a, Point b){
         //cv::threshold(mgray, bin_img, 0, 255, cv::THRESH_BINARY|cv::THRESH_OTSU);
         std::vector<std::vector<cv::Point> > contours;
         std::vector<cv::Vec4i> hierarchy;
+
+        /*vector<Vec4i> lines;
+        HoughLinesP(bin_img, lines, 1, CV_PI/180, 50, 50, 10 );
+        for( size_t i = 0; i < lines.size(); i++ )
+        {
+           Vec4i l = lines[i];
+           line( bin_img, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,255,255), 3, LINE_AA);
+        }*/
+        PlateDtect(image);
+        //cv::imshow("image", bin_img);
 
         cv::findContours(bin_img,
             contours,
@@ -328,6 +339,7 @@ int main()
                 Mat m1(contoursFinded[0]);
                 Mat m2(contoursFindedObjectPoints);
 
+                /* perspective matrix*/
                 int ROIW = brx - tlx - 1;
                 int ROIH = bry - tly - 1;
 
@@ -340,6 +352,7 @@ int main()
                 cv::Mat dst_img;
                 // 變換
                 cv::warpPerspective(mRgb, dst_img, perspective_matrix, Size(ROIW, ROIH), cv::INTER_LINEAR);
+                /* perspective matrix end*/
 
                 //LOGI("src size: %d", contoursFinded[0].size());
                 //LOGI("obj size: %d", contoursFindedObjectPoints.size());
@@ -418,7 +431,7 @@ int main()
 
 
         }
-        cv::imshow("result", mRgb);
+        //cv::imshow("result", mRgb);
 
         if(cv::waitKey(1) == 27){
 			return 0;
