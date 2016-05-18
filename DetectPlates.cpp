@@ -76,9 +76,12 @@ std::vector<PossiblePlate> detectPlatesInScene(cv::Mat &imgOriginalScene) {
 
     std::cout << std::endl << vectorOfPossiblePlates.size() << " possible plates found" << std::endl;       // 13 with MCLRNF1 image
 
-//#ifdef SHOW_STEPS
+#ifdef SHOW_STEPS
     std::cout << std::endl;
     cv::imshow("4a", imgContours);
+    cv::Mat imgGray;
+    cv::Mat imgThresh;
+
 
     for (unsigned int i = 0; i < vectorOfPossiblePlates.size(); i++) {
         cv::Point2f p2fRectPoints[4];
@@ -93,11 +96,22 @@ std::vector<PossiblePlate> detectPlatesInScene(cv::Mat &imgOriginalScene) {
         //std::cout << "possible plate " << i << ", click on any image and press a key to continue . . ." << std::endl;
 
         cv::imshow("4b", vectorOfPossiblePlates[i].imgPlate);
+        preprocess(vectorOfPossiblePlates[i].imgPlate, imgGray, imgThresh);
+        std::vector<cv::Vec4i> lines;
+        HoughLinesP(imgThresh, lines, 1, CV_PI/180, 80, vectorOfPossiblePlates[i].imgPlate.size().width/2.f, 30 );
+        cv::Mat imgline = cv::Mat(vectorOfPossiblePlates[i].imgPlate.size(), CV_8UC3, SCALAR_BLACK);
+        //printf("lines.size: %d", lines.size());
+        std::cout << " lines.size: "<< lines.size() << std::endl;       // 13 with MCLRNF1 image
+        for( size_t i = 0; i < lines.size(); i++ )
+        {
+           cv::Vec4i l = lines[i];
+           line( imgline, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(255,255,255), 3, 16);
+        }
+        cv::imshow("4c", imgline);
         //cv::waitKey(0);
     }
     //std::cout << std::endl << "plate detection complete, click on any image and press a key to begin char recognition . . ." << std::endl << std::endl;
-    //cv::waitKey(0);
-//#endif	// SHOW_STEPS
+#endif	// SHOW_STEPS
 
     return vectorOfPossiblePlates;
 }

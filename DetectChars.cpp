@@ -1,5 +1,8 @@
 // DetectChars.cpp
-
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
+#include<opencv2/imgproc/imgproc.hpp>
+#include<opencv2/ml/ml.hpp>
 #include "DetectChars.h"
 
 // global variables ///////////////////////////////////////////////////////////////////////////////
@@ -64,6 +67,7 @@ std::vector<PossiblePlate> detectCharsInPlates(std::vector<PossiblePlate> &vecto
         preprocess(possiblePlate.imgPlate, possiblePlate.imgGrayscale, possiblePlate.imgThresh);        // preprocess to get grayscale and threshold images
 
 #ifdef SHOW_STEPS
+        std::cout << "detectCharsInPlates  possiblePlate.imgPlate possiblePlate.imgGrayscale possiblePlate.imgThresh" << std::endl;
         cv::imshow("5a", possiblePlate.imgPlate);
         cv::imshow("5b", possiblePlate.imgGrayscale);
         cv::imshow("5c", possiblePlate.imgThresh);
@@ -76,6 +80,7 @@ std::vector<PossiblePlate> detectCharsInPlates(std::vector<PossiblePlate> &vecto
         cv::threshold(possiblePlate.imgThresh, possiblePlate.imgThresh, 0.0, 255.0, CV_THRESH_BINARY | CV_THRESH_OTSU);
 
 #ifdef SHOW_STEPS
+        std::cout << "detectCharsInPlates  possiblePlate.imgThresh" << std::endl;
         cv::imshow("5d", possiblePlate.imgThresh);
 #endif	// SHOW_STEPS
 
@@ -116,6 +121,7 @@ std::vector<PossiblePlate> detectCharsInPlates(std::vector<PossiblePlate> &vecto
         }
         cv::imshow("7", imgContours);
 #endif	// SHOW_STEPS
+
 
         if (vectorOfVectorsOfMatchingCharsInPlate.size() == 0) {                // if no groups of matching chars were found in the plate
 #ifdef SHOW_STEPS
@@ -377,47 +383,47 @@ std::vector<PossibleChar> removeInnerOverlappingChars(std::vector<PossibleChar> 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // this is where we apply the actual char recognition
+///////////////////////////////////////////////////////////////////////////////////////////////////
 std::string recognizeCharsInPlate(cv::Mat &imgThresh, std::vector<PossibleChar> &vectorOfMatchingChars) {
     std::string strChars;               // this will be the return value, the chars in the lic plate
 
     cv::Mat imgThreshColor;
 
-                                        // sort chars from left to right
     std::sort(vectorOfMatchingChars.begin(), vectorOfMatchingChars.end(), PossibleChar::sortCharsLeftToRight);
 
-    cv::cvtColor(imgThresh, imgThreshColor, CV_GRAY2BGR);       // make color version of threshold image so we can draw contours in color on it
+    cv::cvtColor(imgThresh, imgThreshColor, CV_GRAY2BGR);
 
-    for (auto &currentChar : vectorOfMatchingChars) {           // for each char in plate
-        cv::rectangle(imgThreshColor, currentChar.boundingRect, SCALAR_GREEN, 2);       // draw green box around the char
+    for (auto &currentChar : vectorOfMatchingChars) {
+        cv::rectangle(imgThreshColor, currentChar.boundingRect, SCALAR_GREEN, 2);
 
-        cv::Mat imgROItoBeCloned = imgThresh(currentChar.boundingRect);                 // get ROI image of bounding rect
+        cv::Mat imgROItoBeCloned = imgThresh(currentChar.boundingRect);
 
-        cv::Mat imgROI = imgROItoBeCloned.clone();      // clone ROI image so we don't change original when we resize
+        cv::Mat imgROI = imgROItoBeCloned.clone();
 
         cv::Mat imgROIResized;
-                                    // resize image, this is necessary for char recognition
+
         cv::resize(imgROI, imgROIResized, cv::Size(RESIZED_CHAR_IMAGE_WIDTH, RESIZED_CHAR_IMAGE_HEIGHT));
 
         cv::Mat matROIFloat;
 
-        imgROIResized.convertTo(matROIFloat, CV_32FC1);         // convert Mat to float, necessary for call to findNearest
+        imgROIResized.convertTo(matROIFloat, CV_32FC1);
 
-        cv::Mat matROIFlattenedFloat = matROIFloat.reshape(1, 1);       // flatten Matrix into one row
+        cv::Mat matROIFlattenedFloat = matROIFloat.reshape(1, 1);
 
-        cv::Mat matCurrentChar(0, 0, CV_32F);                   // declare Mat to read current char into, this is necessary b/c findNearest requires a Mat
-
+        cv::Mat matCurrentChar(0, 0, CV_32F);
+std::cout  << "before findNearest" << std::endl;
         kNearest->findNearest(matROIFlattenedFloat, 1, matCurrentChar);     // finally we can call find_nearest !!!
-
-        float fltCurrentChar = (float)matCurrentChar.at<float>(0, 0);       // convert current char from Mat to float
+std::cout  << "after findNearest" << std::endl;
+        float fltCurrentChar = (float)matCurrentChar.at<float>(0, 0);
 
         strChars = strChars + char(int(fltCurrentChar));        // append current char to full string
     }
 
-#ifdef SHOW_STEPS
-    cv::imshow("10", imgThreshColor);
-#endif	// SHOW_STEPS
+    //if (blnShowSteps) {
+    //    cv::imshow("10", imgThreshColor);
+    //}
 
-    return(strChars);               // return result
+    return(strChars);
 }
 
 

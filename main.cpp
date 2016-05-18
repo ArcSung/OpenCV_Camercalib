@@ -98,8 +98,10 @@ inline double dist(Point a, Point b){
            Vec4i l = lines[i];
            line( bin_img, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,255,255), 3, LINE_AA);
         }*/
-        PlateDtect(image);
+        //PlateDtect(image);
         //cv::imshow("image", bin_img);
+
+        //return;
 
         cv::findContours(bin_img,
             contours,
@@ -223,10 +225,10 @@ inline double dist(Point a, Point b){
             temp.push_back(L2);
             temp.push_back(L3);
             temp.push_back(L4);
-            circle(image, L1, 3, CV_RGB(0, 0, 255), 3, CV_AA);
-            circle(image, L2, 3, CV_RGB(0, 0, 255), 3, CV_AA);
-            circle(image, L3, 3, CV_RGB(0, 0, 255), 3, CV_AA);
-            circle(image, L4, 3, CV_RGB(0, 0, 255), 3, CV_AA);
+            //circle(image, L1, 3, CV_RGB(0, 0, 255), 3, CV_AA);
+            //circle(image, L2, 3, CV_RGB(0, 0, 255), 3, CV_AA);
+            //circle(image, L3, 3, CV_RGB(0, 0, 255), 3, CV_AA);
+            //circle(image, L4, 3, CV_RGB(0, 0, 255), 3, CV_AA);
             contoursFinded.push_back(temp);
         }
 
@@ -277,6 +279,7 @@ inline double dist(Point a, Point b){
         {
             done = true;
         }
+        //PlateDtect_init();
     }
 
 int main()
@@ -287,6 +290,7 @@ int main()
         //Mat& mRgb = *(Mat*)addrRgba;
         Mat mGr;
         Mat image;
+        Mat dst_img;
         Mat bin_img;
         VideoCapture capture(0);
         capture >> image;
@@ -302,30 +306,32 @@ int main()
         	printf("camCalibing...\n");
             camCalib->GrabFrames(mGr, mRgb);
 
-            FileStorage fs("CameraCalib.xml", FileStorage::WRITE);
-
-            fs << "frameCount" << nImages;
-            time_t rawtime; time(&rawtime);
-            cameraMatrix = camCalib->getIntrinsicsMatrix();
-            distCoeffs = camCalib->getDistortionCoeffs();
-            fs << "calibrationDate" << asctime(localtime(&rawtime));
-            fs << "cameraMatrix" << cameraMatrix << "distCoeffs" << distCoeffs;
-            fs << "features" << "[";
-            for( int i = 0; i < 3; i++ )
-            {
-                int x = rand() % 640;
-                int y = rand() % 480;
-                uchar lbp = rand() % 256;
-
-                fs << "{:" << "x" << x << "y" << y << "lbp" << "[:";
-                for( int j = 0; j < 8; j++ )
-                    fs << ((lbp >> j) & 1);
-                fs << "]" << "}";
-            }
-            fs << "]";
-            fs.release();
-
             done = camCalib->getInitialisation();
+
+            if(done){
+            	FileStorage fs("CameraCalib.xml", FileStorage::WRITE);
+
+            	fs << "frameCount" << nImages;
+            	time_t rawtime; time(&rawtime);
+            	cameraMatrix = camCalib->getIntrinsicsMatrix();
+            	distCoeffs = camCalib->getDistortionCoeffs();
+            	fs << "calibrationDate" << asctime(localtime(&rawtime));
+            	fs << "cameraMatrix" << cameraMatrix << "distCoeffs" << distCoeffs;
+            	fs << "features" << "[";
+            	for( int i = 0; i < 3; i++ )
+            	{
+                	int x = rand() % 640;
+                	int y = rand() % 480;
+                	uchar lbp = rand() % 256;
+
+                	fs << "{:" << "x" << x << "y" << y << "lbp" << "[:";
+                	for( int j = 0; j < 8; j++ )
+                    	fs << ((lbp >> j) & 1);
+                	fs << "]" << "}";
+            	}
+            	fs << "]";
+            	fs.release();
+            }	
 
         }
         else {
@@ -349,7 +355,7 @@ int main()
                 cv::Point2f pts2[] = {cv::Point2f(0,0),cv::Point2f(0,ROIH),cv::Point2f(ROIW,ROIH),cv::Point2f(ROIW,0)};
 
                 cv::Mat perspective_matrix = cv::getPerspectiveTransform(pts1, pts2);
-                cv::Mat dst_img;
+                
                 // 變換
                 cv::warpPerspective(mRgb, dst_img, perspective_matrix, Size(ROIW, ROIH), cv::INTER_LINEAR);
                 /* perspective matrix end*/
@@ -411,15 +417,22 @@ int main()
 
                 sprintf(str,"roll: %d ; pitch: %d ; yaw: %d", (int)(roll*180/3.1415), (int)(pitch*180/3.1415), (int)(yaw*180/3.1415));
 
-                //LOGI("roll: %d ; pitch: %d ; yaw: %d", (int)(roll*180/3.1415), (int)(pitch*180/3.1415), (int)(yaw*180/3.1415));
+                printf(str);
+                printf("\n");
+                printf("perspective_matrix\n");
+                printf("%f, %f, %f\n", perspective_matrix.at<double>(0,0), perspective_matrix.at<double>(0,1), perspective_matrix.at<double>(0,2));
+                printf("%f, %f, %f\n", perspective_matrix.at<double>(1,0), perspective_matrix.at<double>(1,1), perspective_matrix.at<double>(1,2));
+                printf("%f, %f, %f\n", perspective_matrix.at<double>(2,0), perspective_matrix.at<double>(2,1), perspective_matrix.at<double>(2,2));
                 putText(mRgb, str,
                         Point(10,mRgb.rows - 40), FONT_HERSHEY_PLAIN, 2, CV_RGB(0,255,0));
 
-                if(ROIW < mRgb.rows && ROIH < mRgb.cols) {
+                /*if(ROIW < mRgb.rows && ROIH < mRgb.cols) {
                     //LOGI("ROI %d, %d", ROIW, ROIH);
                     resize(dst_img, dst_img , Size(150, 150), 0, 0, INTER_NEAREST);
+                    //PlateDtect(dst_img);
                     dst_img.copyTo(mRgb(Rect(0, 0, 150, 150)));
-                }
+                }*/
+                resize(dst_img, dst_img , Size(200, 200), 0, 0, INTER_NEAREST);
 
                 m1.release();
                 m2.release();
@@ -431,7 +444,8 @@ int main()
 
 
         }
-        //cv::imshow("result", mRgb);
+        cv::imshow("result", mRgb);
+        cv::imshow("dst", dst_img);
 
         if(cv::waitKey(1) == 27){
 			return 0;

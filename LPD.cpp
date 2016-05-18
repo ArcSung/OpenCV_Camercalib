@@ -7,13 +7,17 @@
 
 #include<iostream>
 
+void PlateDtect_init()
+{
+	bool blnKNNTrainingSuccessful = loadKNNDataAndTrainKNN();
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 int PlateDtect(cv::Mat &imgOriginalScene) {
 
 	std::vector<PossiblePlate> vectorOfPossiblePlates = detectPlatesInScene(imgOriginalScene);
 
-	//vectorOfPossiblePlates = detectCharsInPlates(vectorOfPossiblePlates);
+	vectorOfPossiblePlates = detectCharsInPlates(vectorOfPossiblePlates);
 
 	//cv::imshow("imgOriginalScene", imgOriginalScene);			// show original image
 
