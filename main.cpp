@@ -225,10 +225,10 @@ inline double dist(Point a, Point b){
             temp.push_back(L2);
             temp.push_back(L3);
             temp.push_back(L4);
-            //circle(image, L1, 3, CV_RGB(0, 0, 255), 3, CV_AA);
-            //circle(image, L2, 3, CV_RGB(0, 0, 255), 3, CV_AA);
-            //circle(image, L3, 3, CV_RGB(0, 0, 255), 3, CV_AA);
-            //circle(image, L4, 3, CV_RGB(0, 0, 255), 3, CV_AA);
+            circle(image, L1, 3, CV_RGB(0, 0, 255), 3, CV_AA);
+            circle(image, L2, 3, CV_RGB(0, 0, 255), 3, CV_AA);
+            circle(image, L3, 3, CV_RGB(0, 0, 255), 3, CV_AA);
+            circle(image, L4, 3, CV_RGB(0, 0, 255), 3, CV_AA);
             contoursFinded.push_back(temp);
         }
 
@@ -346,7 +346,7 @@ int main()
                 Mat m2(contoursFindedObjectPoints);
 
                 /* perspective matrix*/
-                int ROIW = brx - tlx - 1;
+                /*int ROIW = brx - tlx - 1;
                 int ROIH = bry - tly - 1;
 
                 //Mat SrcROI = mRgb(Rect(tlx, tly, ROIW, ROIH));
@@ -357,7 +357,7 @@ int main()
                 cv::Mat perspective_matrix = cv::getPerspectiveTransform(pts1, pts2);
                 
                 // 變換
-                cv::warpPerspective(mRgb, dst_img, perspective_matrix, Size(ROIW, ROIH), cv::INTER_LINEAR);
+                cv::warpPerspective(mRgb, dst_img, perspective_matrix, Size(ROIW, ROIH), cv::INTER_LINEAR);*/
                 /* perspective matrix end*/
 
                 //LOGI("src size: %d", contoursFinded[0].size());
@@ -382,7 +382,7 @@ int main()
                          mCube.dstPoints2D[i].x, mCube.dstPoints2D[i].y);
                 }*/
 
-                sPoint = mCube.dstPoints2D[0];
+                /*sPoint = mCube.dstPoints2D[0];
                 tPoint = mCube.dstPoints2D[1];
                 cv::line(mRgb, sPoint, tPoint, Scalar(0,0,255,255),5,8,0);
 
@@ -392,7 +392,7 @@ int main()
 
                 sPoint = mCube.dstPoints2D[0];
                 tPoint = mCube.dstPoints2D[3];
-                cv::line(mRgb, sPoint, tPoint, Scalar(0,255,0,255),5,8,0);
+                cv::line(mRgb, sPoint, tPoint, Scalar(0,255,0,255),5,8,0);*/
 
                 /*sPoint = Point((mCube.dstPoints2D[0].x+ mCube.dstPoints2D[2].x)/2, (mCube.dstPoints2D[0].y+ mCube.dstPoints2D[2].y)/2);
                 tPoint = Point((mCube.dstPoints2D[0].x+ mCube.dstPoints2D[1].x)/2, (mCube.dstPoints2D[0].y+ mCube.dstPoints2D[1].y)/2);
@@ -415,16 +415,26 @@ int main()
                 pitch = -asin(rmat.at<double>(2,0));
                 yaw = atan2(rmat.at<double>(2,1),rmat.at<double>(2,2));
 
-                sprintf(str,"roll: %d ; pitch: %d ; yaw: %d", (int)(roll*180/3.1415), (int)(pitch*180/3.1415), (int)(yaw*180/3.1415));
+                roll = roll*180/3.1415;
+                pitch = pitch*180/3.1415;
+                yaw = yaw*180/3.1415;
 
-                printf(str);
-                printf("\n");
+                sprintf(str,"roll: %d ; pitch: %d ; yaw: %d", (int)(roll), (int)(pitch), (int)(yaw));
+
+                printf("%s\n", str);
+                /*printf("\n");
                 printf("perspective_matrix\n");
                 printf("%f, %f, %f\n", perspective_matrix.at<double>(0,0), perspective_matrix.at<double>(0,1), perspective_matrix.at<double>(0,2));
                 printf("%f, %f, %f\n", perspective_matrix.at<double>(1,0), perspective_matrix.at<double>(1,1), perspective_matrix.at<double>(1,2));
-                printf("%f, %f, %f\n", perspective_matrix.at<double>(2,0), perspective_matrix.at<double>(2,1), perspective_matrix.at<double>(2,2));
+                printf("%f, %f, %f\n", perspective_matrix.at<double>(2,0), perspective_matrix.at<double>(2,1), perspective_matrix.at<double>(2,2));*/
                 putText(mRgb, str,
                         Point(10,mRgb.rows - 40), FONT_HERSHEY_PLAIN, 2, CV_RGB(0,255,0));
+
+                double alpha = 90 + (pitch)/4; //the rotation around the x axis
+                double beta = 90 - (yaw > 0? 180 - yaw: 0 - 180 - yaw)/2;  //the rotation around the y axis
+                double gamma = 90 - (roll - 90); //the rotation around the z axis
+
+                rotateImage(mRgb, dst_img, alpha, beta, gamma, 0, 0, 200, 200);
 
                 /*if(ROIW < mRgb.rows && ROIH < mRgb.cols) {
                     //LOGI("ROI %d, %d", ROIW, ROIH);
@@ -432,12 +442,13 @@ int main()
                     //PlateDtect(dst_img);
                     dst_img.copyTo(mRgb(Rect(0, 0, 150, 150)));
                 }*/
-                resize(dst_img, dst_img , Size(200, 200), 0, 0, INTER_NEAREST);
+                //resize(dst_img, dst_img , Size(200, 200), 0, 0, INTER_NEAREST);
 
                 m1.release();
                 m2.release();
                 rmat.release();
                 //SrcROI.release();
+                cv::imshow("dst", dst_img);
 
             }
             //LOGI("drawProcessing ends");
@@ -445,7 +456,7 @@ int main()
 
         }
         cv::imshow("result", mRgb);
-        cv::imshow("dst", dst_img);
+        
 
         if(cv::waitKey(1) == 27){
 			return 0;

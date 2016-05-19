@@ -7,6 +7,8 @@
 #include<opencv2/highgui/highgui.hpp>
 #include<opencv2/imgproc/imgproc.hpp>
 
+using namespace cv;
+
 // global variables ///////////////////////////////////////////////////////////////////////////////
 const cv::Size GAUSSIAN_SMOOTH_FILTER_SIZE = cv::Size(5, 5);
 const int ADAPTIVE_THRESH_BLOCK_SIZE = 19;
@@ -19,6 +21,8 @@ void preprocess(cv::Mat imgOriginal, cv::Mat &imgGrayscale, cv::Mat &imgThresh);
 cv::Mat extractValue(cv::Mat imgOriginal);
 
 cv::Mat maximizeContrast(cv::Mat imgGrayscale);
+
+void rotateImage(const Mat &input, Mat &output, double alpha, double beta, double gamma, double dx, double dy, double dz, double f);
 
 #endif	// PREPROCESS_H
 
