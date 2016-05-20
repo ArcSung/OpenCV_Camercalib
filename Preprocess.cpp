@@ -99,7 +99,19 @@ void rotateImage(const Mat &input, Mat &output, double alpha, double beta, doubl
     Mat trans = A2 * (T * (R * A1));
     // Apply matrix transformation
     warpPerspective(input, output, trans, input.size(), INTER_LANCZOS4);
-  }   
+  }
+
+  std::vector<Point2f> ReverserMat(std::vector<Point2f> input) {
+
+    std::vector<Point2f> tempMat;
+     
+    for( int i = 0; i < input.size(); i++ )  
+    {  
+      tempMat.push_back(input[input.size()-i-1]);  
+    }  
+
+    return(tempMat);
+  }
 
 
 

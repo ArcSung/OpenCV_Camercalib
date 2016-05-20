@@ -24,5 +24,7 @@ cv::Mat maximizeContrast(cv::Mat imgGrayscale);
 
 void rotateImage(const Mat &input, Mat &output, double alpha, double beta, double gamma, double dx, double dy, double dz, double f);
 
+std::vector<Point2f> ReverserMat(std::vector<Point2f> input);
+
 #endif	// PREPROCESS_H
 

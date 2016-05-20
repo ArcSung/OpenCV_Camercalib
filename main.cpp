@@ -22,7 +22,9 @@ const int CUBE_SIZE = 5;
 const int CHESS_SIZE = 25;
 
 vector<Point3f> contoursFindedObjectPoints;
+vector<Point3f> _3DPoints;
 vector< vector<Point2f> > contoursFinded;
+vector<Point2f> corners;
 myCV::CameraCalibration *camCalib;
 Mat rvecs, tvecs;
 cv::Mat cameraMatrix;
@@ -252,6 +254,7 @@ inline double dist(Point a, Point b){
         camCalib->Initialisation();
 
         int x2 = 100;
+        float a = 0.2f;	
 
         contoursFindedObjectPoints.push_back(
                 Point3f(0, 0, 0.0f));
@@ -261,6 +264,20 @@ inline double dist(Point a, Point b){
                 Point3f(x2, x2, 0.0f));
         contoursFindedObjectPoints.push_back(
                 Point3f(x2, 0, 0.0f));
+
+        float rot = 0.0f;
+	    Point3f _3DPoint;
+	    float y = (((5-1.0f)/2.0f)*a)+(a/2.0f);
+	    float x = 0.0f;
+	    for(int h = 0; h < 5; h++, y+=a){
+		    x = (((7-2.0f)/2.0f)*(-a))-(a/2.0f);
+		    for(int w = 0; w < 7; w++, x+=a){
+			    _3DPoint.x = x;
+			    _3DPoint.y = y;
+			    _3DPoint.z = 0.0f;
+			    _3DPoints.push_back(_3DPoint);
+		    }
+	    }
 
         FileStorage fs2("CameraCalib.xml", FileStorage::READ);
 
@@ -337,11 +354,70 @@ int main()
         else {
         	//printf("dectecting...\n");
 
-            Cube mCube = Cube();
-            drawMarkerContours(mRgb, mGr);
+            //drawMarkerContours(mRgb, mGr);
+            bool  found = findChessboardCorners(mRgb, boardSize, corners, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
+            
 
-            if(contoursFinded.size() > 0) {
+            if(found) {
+            	cornerSubPix(mGr, corners, Size(5, 5), Size(-1,-1), TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
+                if((corners[34].x + corners[34].y) < (corners[0].x + corners[0].y))
+                {
+                	corners = ReverserMat(corners);
+                }	
 
+                drawChessboardCorners(mRgb, boardSize, Mat(corners), found);
+
+            	Mat m1(corners);
+                Mat m2(_3DPoints);
+
+                cv::solvePnP(m2,
+                             m1,
+                             cameraMatrix,
+                             distCoeffs,
+                             rvecs,
+                             tvecs);
+
+                Mat rmat;
+                char str[200];
+                Rodrigues(rvecs,rmat);
+                double roll, pitch, yaw;
+
+                roll = atan2(rmat.at<double>(1,0),rmat.at<double>(0,0));
+                pitch = -asin(rmat.at<double>(2,0));
+                yaw = atan2(rmat.at<double>(2,1),rmat.at<double>(2,2));
+
+                roll = roll*180/3.1415;
+                pitch = pitch*180/3.1415;
+                yaw = yaw*180/3.1415;
+
+                sprintf(str,"roll: %d ; pitch: %d ; yaw: %d", (int)(roll), (int)(pitch), (int)(yaw));
+
+                printf("%s\n", str);
+
+                putText(mRgb, str, Point(10,mRgb.rows - 40), FONT_HERSHEY_PLAIN, 2, CV_RGB(0,255,0));
+
+                double alpha = 90 + (pitch - 30)/4 ; //the rotation around the x axis
+                //double alpha = 90;   
+                double beta = 90 - yaw;  //the rotation around the y axis
+                //double beta = 90;
+                double gamma = (roll > 90? 90 + (180 - roll) : 90 - roll); //the rotation around the z axis
+                //double gamma = 90;
+                sprintf(str,"alpha: %d ; beta: %d ; gamma: %d", (int)(alpha), (int)(beta), (int)(gamma));
+                printf("%s\n", str);
+               
+                rotateImage(mRgb, dst_img, alpha, beta, gamma, 0, 0, 200, 200);
+
+
+                m1.release();
+                m2.release();
+                rmat.release();
+                //SrcROI.release();
+                cv::imshow("dst", dst_img);
+            }	
+            else if(contoursFinded.size() > 0) {
+
+
+                //Mat m1(corners);
                 Mat m1(contoursFinded[0]);
                 Mat m2(contoursFindedObjectPoints);
 
@@ -373,7 +449,7 @@ int main()
                              tvecs);
 
                 //LOGI("projectPoints");
-                projectPoints(mCube.srcPoints3D, rvecs, tvecs, cameraMatrix, distCoeffs, mCube.dstPoints2D);
+                //projectPoints(mCube.srcPoints3D, rvecs, tvecs, cameraMatrix, distCoeffs, mCube.dstPoints2D);
 
                 /*LOGI("points::::::::::::");
                 for(int i=0;i<8;i++){
@@ -431,8 +507,9 @@ int main()
                         Point(10,mRgb.rows - 40), FONT_HERSHEY_PLAIN, 2, CV_RGB(0,255,0));
 
                 double alpha = 90 + (pitch)/4; //the rotation around the x axis
-                double beta = 90 - (yaw > 0? 180 - yaw: 0 - 180 - yaw)/2;  //the rotation around the y axis
-                double gamma = 90 - (roll - 90); //the rotation around the z axis
+                double beta = 90 - (yaw > 0? 180 - yaw: 0 - 180 - yaw)/4;  //the rotation around the y axis
+                //double gamma = 90 - (roll - 90); //the rotation around the z axis
+                double gamma = 90;
 
                 rotateImage(mRgb, dst_img, alpha, beta, gamma, 0, 0, 200, 200);
 
